@@ -72,6 +72,7 @@ app.post("/scream", (req, res) => {
 
 // Signup route
 app.post("/signup", (req, res) => {
+  // newUser will be stored in firebase authentication
   const newUser = {
     email: req.body.email,
     password: req.body.password,
@@ -79,7 +80,7 @@ app.post("/signup", (req, res) => {
     handle: req.body.handle
   };
 
-  // TODO validate data
+  // TODO: validate data
   let token, userId;
   db.doc(`/users/${newUser.handle}`)
     .get()
@@ -90,16 +91,22 @@ app.post("/signup", (req, res) => {
           handle: "this handle is already taken"
         });
       } else {
+        // returns data authentication
         return firebase
           .auth()
           .createUserWithEmailAndPassword(newUser.email, newUser.password);
       }
     })
     .then(data => {
+      /*
+        the uid in firebase authentication cannot be linked to firebase database
+        thus, idToken will be manually inserted to the database as follows
+      */
       userId = data.user.uid;
       return data.user.getIdToken();
     })
     .then(idToken => {
+      // userCredentials will be stored in firebase database
       token = idToken;
       const userCredentials = {
         handle: newUser.handle,
@@ -107,6 +114,7 @@ app.post("/signup", (req, res) => {
         createdAt: new Date().toISOString(),
         userId
       };
+      // return the response JWT token
       return db.doc(`/users/${newUser.handle}`).set(userCredentials);
     })
     .then(() => {
