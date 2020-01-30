@@ -94,16 +94,17 @@ app.post("/signup", (req, res) => {
   // error handling
   let errors = {};
   if (isEmpty(newUser.email)) {
-    errors.email = 'Must not be empty';
+    errors.email = "Must not be empty";
   } else if (!isEmail(newUser.email)) {
-    errors.email = 'Must be a valid email address';
+    errors.email = "Must be a valid email address";
   }
 
-  if(isEmpty(newUser.password)) errors.password = 'Must not be empty';
-  if(newUser.password !== newUser.confirmPassword) errors.confirmPassword = 'Passwords must match';
-  if(isEmpty(newUser.handle)) errors.handle = 'Must not be empty';
+  if (isEmpty(newUser.password)) errors.password = "Must not be empty";
+  if (newUser.password !== newUser.confirmPassword)
+    errors.confirmPassword = "Passwords must match";
+  if (isEmpty(newUser.handle)) errors.handle = "Must not be empty";
 
-  if(Object.keys(errors).length > 0)return res.status(400).json(errors)
+  if (Object.keys(errors).length > 0) return res.status(400).json(errors);
 
   // TODO: validate data
   let token, userId;
@@ -147,6 +148,7 @@ app.post("/signup", (req, res) => {
     })
     .catch(err => {
       console.error(err);
+      // catch default firebase error handling and convert into our error
       if (err.code === "auth/email-already-in-use") {
         return res.status(400).json({ email: "Email is already is in use" });
       } else {
@@ -155,6 +157,37 @@ app.post("/signup", (req, res) => {
     });
 });
 
+app.post("/login", (req, res) => {
+  const user = {
+    email: req.body.email,
+    password: req.body.password
+  };
+
+  // error handling
+  let errors = {};
+
+  if (isEmpty(user.email)) errors.email = "Must not be empty";
+  if (isEmpty(user.password)) errors.password = "Must not be empty";
+
+  if (Object.keys(errors).length > 0) return res.status(400).json(errors);
+
+  firebase
+    .auth()
+    .signInWithEmailAndPassword(user.email, user.password)
+    .then(data => {
+      return data.user.getIdToken();
+    })
+    .then(token => {
+      return res.json({ token });
+    })
+    .catch(err => {
+      console.error(err);
+      // catch default firebase error handling and convert into our error
+      if(err.code === 'auth/wrong-password'){
+          return res.status(403).json({ general: 'Wrong credentials, please try again'});
+      } else return res.status(500).json({ error: err.code });
+    });
+});
 
 // https://baseurl.com/api/scream <- /api/ is good practice
 // https://api.baseurl.com/scream <- good practice alternative
