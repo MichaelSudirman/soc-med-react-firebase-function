@@ -155,6 +155,7 @@ app.post("/signup", (req, res) => {
     });
 });
 
+
 // https://baseurl.com/api/scream <- /api/ is good practice
 // https://api.baseurl.com/scream <- good practice alternative
 exports.api = functions.https.onRequest(app);
