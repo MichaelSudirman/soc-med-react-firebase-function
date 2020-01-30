@@ -1,3 +1,5 @@
+# Ignore config files
+functions/util/config.js
 # Logs
 logs
 *.log
