@@ -29,7 +29,6 @@ module.exports = (req, res, next) => {
               to the database section manually
          */
       req.user = decodedToken;
-      console.log(decodedToken);
       return db
         .collection("users")
         .where("userId", "==", req.user.uid)

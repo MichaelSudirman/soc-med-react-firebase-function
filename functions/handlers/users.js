@@ -115,9 +115,12 @@ exports.uploadImage = (req, res) => {
   let imageToBeUploaded = {};
 
   busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+    if (mimetype !== "image/jpeg" && mimetype !== "image.png") {
+      return res.status(400).json({ error: "Wrong file type submitted" });
+    }
     console.log(fieldname, file, filename, encoding, mimetype);
     // split the string per dot: my.image.png -> ['my','image','png']
-    const imageExtension = filename.split('.')[filename.split('.').length - 1]
+    const imageExtension = filename.split(".")[filename.split(".").length - 1];
     // exampe: 1374574.png
     imageFileName = `${Math.round(
       Math.random() * 1000000000000
