@@ -42,7 +42,8 @@ module.exports = (req, res, next) => {
               then proceeds to the next function carrying needed auth data
           */
       req.user.handle = data.docs[0].data().handle;
-      console.log(req)
+      req.user.imageUrl = data.docs[0].data().imageUrl;
+      console.log(req);
       return next();
     })
     .catch(err => {
