@@ -123,7 +123,6 @@ exports.likeScream = (req, res) => {
     .limit(1);
 
   const screamDocument = db.doc(`/screams/${req.params.screamId}`);
-
   let screamData;
 
   screamDocument
