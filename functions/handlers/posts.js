@@ -126,9 +126,49 @@ exports.commentOnPost = (req, res) => {
 };
 
 /*
-  req.params.postId is not required to be sent.
-  It is stored there for just in case, when there is additional changes,
-  when there is a change in front end
+  delete comment from a post.
+  Using snapshot to reduce postId param.
+  Might need to replace onSnapshot() to be more cleanm
+  with then() and catch() chain function
+*/
+exports.deleteComment = (req, res) => {
+  db.collection("comments")
+    .onSnapshot(snapshot => {
+      let snapshotResult = {};
+      snapshot.forEach(comment => {
+        if (comment.id === req.params.commentId) {
+          snapshotResult = { exists: true, postId: comment.data().postId };
+        }
+      });
+      if (snapshotResult.exists) {
+        if (doc.data().userHandle !== req.user.handle) {
+          return res.status(403).json({ error: "Unauthorized" });
+        }
+        db.doc(`/comments/${req.params.commentId}`).delete();
+        const postDocument = db.doc(`/posts/${snapshotResult.postId}`);
+        postDocument
+          .get()
+          .then(doc => {
+            postData = doc.data();
+            postDocument.update({ commentCount: --postData.commentCount });
+            return res.json({ data: postData });
+          })
+          .catch(err => {
+            console.error(err);
+            res.status(500).json({ error: err.code });
+          });
+      } else {
+        return res
+          .status(400)
+          .json({ error: "Your specified comment does not exists" });
+      }
+    });
+};
+
+/*
+  delete comment from a post (DEPRECATED)
+  deprecated function, does not need to have a postId param.
+  might need to use again in case of needing postId param.
 */
 exports.uncommentOnPost = (req, res) => {
   db.collection("comments")
@@ -147,7 +187,7 @@ exports.uncommentOnPost = (req, res) => {
         postDocument
           .get()
           .then(doc => {
-            postData = doc.data()
+            postData = doc.data();
             postDocument.update({ commentCount: --postData.commentCount });
             return res.json({ data: postData });
           })
@@ -162,75 +202,6 @@ exports.uncommentOnPost = (req, res) => {
       }
     });
 };
-// .then(postId => {
-//   const postDocument = db.doc(`/posts/${postId}`);
-//   postDocument.doc.data().likeCount--;
-//   postDocument.update({ likeCount: postData.likeCount });
-//   return res.json(postData);
-// })
-// .catch(err => {
-//   console.error(err);
-//   res.status(500).json({ error: err.code });
-// });
-// .then(existDocument => {
-//   if (existDocument.exists) {
-//     // db.doc(`/coments/${req.params.commentId}`).delete();
-//     return postId;
-//   } else {
-//     return res
-//       .status(400)
-//       .json({ error: "Your specified comment does not exists" });
-//   }
-// })
-// .then(postId =>{
-//   const postDocument = db.doc(`/posts/${postId}`);
-//   postDocument.doc.data().likeCount--;
-//   postDocument.update({likeCount: postData.likeCount})
-//   return res.json(postData)
-// })
-// .catch(err => {
-//   console.error(err);
-//   res.status(500).json({ error: err.code });
-// });
-
-// commentDocument.get().then(doc => {
-//   if(doc.empty){
-//     return res
-//       .status(400)
-//       .json({ error: "Your specified comment does not exists" });
-//   }else{
-//     return res.json(doc)
-//   }
-// });
-
-// const postDocument = db.doc(`/posts/${req.params.postId}`);
-// let postData;
-
-// postDocument
-//   .get()
-//   .then(doc => {
-//     if (doc.exists) {
-//       postData = doc.data();
-//       postData.postId = doc.id;
-//       return commentDocument.get();
-//     } else {
-//       return res.status(404).json({ error: "Post not found" });
-//     }
-//   })
-//   .then(data => {
-//     if (data.empty) {
-//       return res
-//         .status(400)
-//         .json({ error: "Your specified comment does not exists" });
-//     } else {
-//       return res.json(data);
-//     }
-//   })
-//   .catch(err => {
-//     console.error(err);
-//     res.status(500).json({ error: err.code });
-//   });
-// };
 
 // like a post
 exports.likePost = (req, res) => {

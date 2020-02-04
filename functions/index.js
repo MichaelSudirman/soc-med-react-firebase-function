@@ -11,11 +11,12 @@ const {
   getAllPosts,
   postOnePost,
   getPost,
+  deletePost,
   commentOnPost,
-  uncommentOnPost,
+  uncommentOnPost, // deprecated function
+  deleteComment,
   likePost,
-  unlikePost,
-  deletePost
+  unlikePost
 } = require("./handlers/posts");
 const {
   signup,
@@ -34,9 +35,11 @@ app.get("/post/:postId", getPost);
 app.get("/post/:postId/like", FBAuth, likePost);
 app.get("/post/:postId/unlike", FBAuth, unlikePost);
 app.post("/post/:postId/comment", FBAuth, commentOnPost);
-// TODO uncomment post
-app.get("/post/:postId/uncomment/:commentId", FBAuth, uncommentOnPost);
+app.delete("/comment/:commentId", FBAuth, deleteComment);
 app.delete("/post/:postId", FBAuth, deletePost);
+
+// deprecated post route, might delete later
+app.get("/post/:postId/uncomment/:commentId", FBAuth, uncommentOnPost);
 
 // users routes
 app.post("/signup", signup);
