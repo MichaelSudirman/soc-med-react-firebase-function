@@ -63,7 +63,6 @@ exports.getPost = (req, res) => {
         return res.status(404).json({ error: "Post not found" });
       }
       postData = doc.data();
-      postData.postId = doc.id;
       return db
         .collection("comments")
         .orderBy("createdAt", "desc")
@@ -73,7 +72,17 @@ exports.getPost = (req, res) => {
     .then(data => {
       postData.comments = [];
       data.forEach(doc => {
-        postData.comments.push(doc.data());
+        postData.comments.push({
+          // ...doc.data(), commentId: doc.id in old versions of database
+          // added feature that commentId is now shown
+          postId: doc.data().postId,
+          commentId: doc.id,
+          userImage: doc.data().userImage,
+          body: doc.data().body,
+          createdAt: doc.data().createdAt,
+          userHandle: doc.data().userHandle
+        });
+        // postData.id.push(doc.id);
       });
       return res.json(postData);
     })
@@ -115,6 +124,113 @@ exports.commentOnPost = (req, res) => {
       res.status(500).json({ error: "Something went wrong" });
     });
 };
+
+/*
+  req.params.postId is not required to be sent.
+  It is stored there for just in case, when there is additional changes,
+  when there is a change in front end
+*/
+exports.uncommentOnPost = (req, res) => {
+  db.collection("comments")
+    .where("userHandle", "==", req.user.handle)
+    .where("postId", "==", req.params.postId)
+    .onSnapshot(snapshot => {
+      let snapshotResult = {};
+      snapshot.forEach(comment => {
+        if (comment.id === req.params.commentId) {
+          snapshotResult = { exists: true, postId: comment.data().postId };
+        }
+      });
+      if (snapshotResult.exists) {
+        db.doc(`/comments/${req.params.commentId}`).delete();
+        const postDocument = db.doc(`/posts/${snapshotResult.postId}`);
+        postDocument
+          .get()
+          .then(doc => {
+            postData = doc.data()
+            postDocument.update({ commentCount: --postData.commentCount });
+            return res.json({ data: postData });
+          })
+          .catch(err => {
+            console.error(err);
+            res.status(500).json({ error: err.code });
+          });
+      } else {
+        return res
+          .status(400)
+          .json({ error: "Your specified comment does not exists" });
+      }
+    });
+};
+// .then(postId => {
+//   const postDocument = db.doc(`/posts/${postId}`);
+//   postDocument.doc.data().likeCount--;
+//   postDocument.update({ likeCount: postData.likeCount });
+//   return res.json(postData);
+// })
+// .catch(err => {
+//   console.error(err);
+//   res.status(500).json({ error: err.code });
+// });
+// .then(existDocument => {
+//   if (existDocument.exists) {
+//     // db.doc(`/coments/${req.params.commentId}`).delete();
+//     return postId;
+//   } else {
+//     return res
+//       .status(400)
+//       .json({ error: "Your specified comment does not exists" });
+//   }
+// })
+// .then(postId =>{
+//   const postDocument = db.doc(`/posts/${postId}`);
+//   postDocument.doc.data().likeCount--;
+//   postDocument.update({likeCount: postData.likeCount})
+//   return res.json(postData)
+// })
+// .catch(err => {
+//   console.error(err);
+//   res.status(500).json({ error: err.code });
+// });
+
+// commentDocument.get().then(doc => {
+//   if(doc.empty){
+//     return res
+//       .status(400)
+//       .json({ error: "Your specified comment does not exists" });
+//   }else{
+//     return res.json(doc)
+//   }
+// });
+
+// const postDocument = db.doc(`/posts/${req.params.postId}`);
+// let postData;
+
+// postDocument
+//   .get()
+//   .then(doc => {
+//     if (doc.exists) {
+//       postData = doc.data();
+//       postData.postId = doc.id;
+//       return commentDocument.get();
+//     } else {
+//       return res.status(404).json({ error: "Post not found" });
+//     }
+//   })
+//   .then(data => {
+//     if (data.empty) {
+//       return res
+//         .status(400)
+//         .json({ error: "Your specified comment does not exists" });
+//     } else {
+//       return res.json(data);
+//     }
+//   })
+//   .catch(err => {
+//     console.error(err);
+//     res.status(500).json({ error: err.code });
+//   });
+// };
 
 // like a post
 exports.likePost = (req, res) => {
@@ -173,7 +289,6 @@ exports.unlikePost = (req, res) => {
     .limit(1);
 
   const postDocument = db.doc(`/posts/${req.params.postId}`);
-
   let postData;
 
   postDocument

@@ -12,6 +12,7 @@ const {
   postOnePost,
   getPost,
   commentOnPost,
+  uncommentOnPost,
   likePost,
   unlikePost,
   deletePost
@@ -33,8 +34,9 @@ app.get("/post/:postId", getPost);
 app.get("/post/:postId/like", FBAuth, likePost);
 app.get("/post/:postId/unlike", FBAuth, unlikePost);
 app.post("/post/:postId/comment", FBAuth, commentOnPost);
-app.delete("/post/:postId", FBAuth, deletePost);
 // TODO uncomment post
+app.get("/post/:postId/uncomment/:commentId", FBAuth, uncommentOnPost);
+app.delete("/post/:postId", FBAuth, deletePost);
 
 // users routes
 app.post("/signup", signup);
@@ -75,6 +77,18 @@ exports.createNotificationOnLike = functions.firestore
 
 exports.deleteNotificationOnUnLike = functions.firestore
   .document("likes/{id}")
+  .onDelete(snapshot => {
+    return db
+      .doc(`/notifications/${snapshot.id}`)
+      .delete()
+      .catch(err => {
+        console.error(err);
+        return;
+      });
+  });
+
+exports.deleteNotificationOnUnComment = functions.firestore
+  .document("comments/{id}")
   .onDelete(snapshot => {
     return db
       .doc(`/notifications/${snapshot.id}`)
