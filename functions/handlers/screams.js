@@ -10,10 +10,13 @@ exports.getAllScreams = (req, res) => {
         screams.push({
           screamId: doc.id,
           // ...doc.data() is not compatible in firebase [Node 6]
-          // rewrite all 3 data
+          // rewrite all 6 data
           body: doc.data().body,
           userHandle: doc.data().userHandle,
-          createdAt: doc.data().createdAt
+          createdAt: doc.data().createdAt,
+          commentCount: doc.data().commentCount,
+          likeCount: doc.data().likeCount,
+          userImage: doc.data().userImage
         });
       });
       return res.json(screams);
