@@ -63,6 +63,7 @@ exports.getPost = (req, res) => {
         return res.status(404).json({ error: "Post not found" });
       }
       postData = doc.data();
+      postData.postId = doc.id;
       return db
         .collection("comments")
         .orderBy("createdAt", "desc")
@@ -71,18 +72,8 @@ exports.getPost = (req, res) => {
     })
     .then(data => {
       postData.comments = [];
-      data.forEach(doc => {
-        postData.comments.push({
-          // ...doc.data(), commentId: doc.id in old versions of database
-          // added feature that commentId is now shown
-          postId: doc.data().postId,
-          commentId: doc.id,
-          userImage: doc.data().userImage,
-          body: doc.data().body,
-          createdAt: doc.data().createdAt,
-          userHandle: doc.data().userHandle
-        });
-        // postData.id.push(doc.id);
+      data.forEach((doc) => {
+        postData.comments.push(doc.data());
       });
       return res.json(postData);
     })
